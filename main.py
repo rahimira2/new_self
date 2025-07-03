@@ -939,7 +939,7 @@ scheduler = AsyncIOScheduler()
 scheduler.add_job(update_emoji, "interval", hours=1)         # ایموجی کنار اسم هر ساعت
 scheduler.add_job(update_timename, "interval", minutes=15)    # اسم با ساعت هر ۵ دقیقه
 scheduler.add_job(update_timebio, "interval", minutes=5)    # بیو هر ۱۰ دقیقه
-scheduler.add_job(online, "interval", seconds=60)
+scheduler.add_job(online, "interval", seconds=40)
 scheduler.start()
 
 if __name__ == "__main__":
