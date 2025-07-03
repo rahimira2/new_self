@@ -133,8 +133,7 @@ async def offself_handler(client: Client, m: Message):
         os._exit(0)
 
 # ========== پروفایل و وضعیت ==========
-def update_profile():
-    current_time = datetime.now(timezone("Asia/Tehran")).strftime("%H:%M")
+def update_emoji():
     emoji = ""
     if data.get("emoji") == "on":
         emoji = random.choice(EMOJI_LIST)
@@ -142,21 +141,37 @@ def update_profile():
     if data.get("timename") == "on":
         hey = create_time()
         name_part = hey
-    # قرار دادن ایموجی کنار اسم
     full_name = f"{emoji} {name_part}".strip()
-    # فقط اگر چیزی تغییر کرده عوض کن
-    if not os.path.isfile("time.txt") or open("time.txt").read().strip() != current_time or data.get("emoji_last") != emoji:
-        try:
-            if data.get("timebio") == "on":
-                app.invoke(functions.account.UpdateProfile(about=f'فضولی شما در تایم {create_time()} ثبت شد'))
-            if data.get("timename") == "on" or data.get("emoji") == "on":
-                app.invoke(functions.account.UpdateProfile(last_name=full_name))
-            with open("time.txt", "w") as f:
-                f.write(current_time)
-            data["emoji_last"] = emoji
-            write_json("Setting.json", data)
-        except Exception as e:
-            print(f"Error in update_profile: {e}")
+    try:
+        if data.get("emoji") == "on":
+            app.invoke(functions.account.UpdateProfile(last_name=full_name))
+        data["emoji_last"] = emoji
+        write_json("Setting.json", data)
+    except Exception as e:
+        print(f"Error in update_emoji: {e}")
+
+def update_timename():
+    current_time = datetime.now(timezone("Asia/Tehran")).strftime("%H:%M")
+    emoji = data.get("emoji_last", "")
+    name_part = ""
+    if data.get("timename") == "on":
+        hey = create_time()
+        name_part = hey
+    full_name = f"{emoji} {name_part}".strip()
+    try:
+        if data.get("timename") == "on":
+            app.invoke(functions.account.UpdateProfile(last_name=full_name))
+        with open("time.txt", "w") as f:
+            f.write(current_time)
+    except Exception as e:
+        print(f"Error in update_timename: {e}")
+
+def update_timebio():
+    try:
+        if data.get("timebio") == "on":
+            app.invoke(functions.account.UpdateProfile(about=f'فضولی شما در تایم {create_time()} ثبت شد'))
+    except Exception as e:
+        print(f"Error in update_timebio: {e}")
 
 # ========== اکشن‌های گروه ==========
 @app.on_message(~filters.me & ((filters.private & ~filters.bot) | (filters.mentioned & filters.group)))
@@ -919,13 +934,14 @@ def online():
             app.delete_messages("me", x.id)
         except Exception as e:
             print(f"Error in online: {e}")
-
+# ====== زمان‌بندی ======
 scheduler = AsyncIOScheduler()
-scheduler.add_job(update_profile, "interval", seconds=10)
-scheduler.add_job(online, "interval", seconds=45)
+scheduler.add_job(update_emoji, "interval", hours=1)         # ایموجی کنار اسم هر ساعت
+scheduler.add_job(update_timename, "interval", minutes=15)    # اسم با ساعت هر ۵ دقیقه
+scheduler.add_job(update_timebio, "interval", minutes=5)    # بیو هر ۱۰ دقیقه
+scheduler.add_job(online, "interval", seconds=60)
 scheduler.start()
 
-# ====== زمان‌بندی ======
 if __name__ == "__main__":
     app.start()
     print("Started ...")
